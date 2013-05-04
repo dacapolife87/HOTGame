@@ -3,6 +3,9 @@ class HOTGame extends UTDeathmatch;
 var int EnemiesLeft;
 var array<HOTEnemySpawner> EnemySpawners;
 
+var int WaveCounter;
+var int RoundCounter;
+
 var float MinSpawnerDistance, MaxSpawnerDistance;
 
 simulated function PostBeginPlay()
@@ -22,7 +25,6 @@ simulated function PostBeginPlay()
 function ActivateSpawners()
 {
     local int i;
-    local array<HOTEnemySpawner> InRangeSpawners;
     local HOTPlayerController PC;
 
     foreach LocalPlayerControllers(class'HOTPlayerController', PC)
@@ -35,23 +37,21 @@ function ActivateSpawners()
 
     for(i=0; i<EnemySpawners.length; i++)
     {
-        if(VSize(PC.Pawn.Location - EnemySpawners[i].Location) > MinSpawnerDistance && VSize(PC.Pawn.Location - EnemySpawners[i].Location) < MaxSpawnerDistance)
-        {
             if(EnemySpawners[i].CanSpawnEnemy())
-                InRangeSpawners[InRangeSpawners.length] = EnemySpawners[i];
+                EnemySpawners[i].SpawnEnemy();
+    }
+
+        //InRangeSpawners[Rand(InRangeSpawners.length)].SpawnEnemy();
+
+
+        if(WaveCounter==1){
+            WaveCounter=0;
+            RoundCounter++;
+            SetTimer(20.0, false, 'ActivateSpawners');
+            return;
         }
-    }
-
-    if(InRangeSpawners.length == 0)
-    {
-        `log("No enemy spawners within range!");
-        SetTimer(1.0, false, 'ActivateSpawners');
-        return;
-    }
-
-    InRangeSpawners[Rand(InRangeSpawners.length)].SpawnEnemy();
-
-    SetTimer(1.0 + FRand() * 3.0, false, 'ActivateSpawners');
+        WaveCounter++;
+        SetTimer(5.0, false, 'ActivateSpawners');
 }
 
 function ScoreObjective(PlayerReplicationInfo Scorer, Int Score)
@@ -71,9 +71,8 @@ function ScoreObjective(PlayerReplicationInfo Scorer, Int Score)
 
 defaultproperties
 {
-    MinSpawnerDistance=1700.0
-    MaxSpawnerDistance=3000.0
-    EnemiesLeft=10
+  WaveCounter=0
+    EnemiesLeft=20
     bScoreDeaths=false
     PlayerControllerClass=class'HOTGame.HOTPlayerController'
     DefaultPawnClass=class'HOTGame.HOTPawn'
